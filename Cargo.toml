@@ -1,0 +1,16 @@
+[package]
+name = "simpledateformat"
+version = "0.0.0"
+authors = ["Hatter Jiang <jht5945@gmail.com>"]
+edition = "2018"
+description = "SimpleDateFormat.java style like date format"
+keywords = ["DateFormat", "SimpleDateFormat"]
+readme = "README.md"
+repository = "https://git.hatter.ink/hatter/simpledateformat"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+quick-error = "1.2.3"
+chrono = "0.4.11"
