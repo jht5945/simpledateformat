@@ -18,10 +18,11 @@ enum SimpleDateFormatPart {
     YearLower(usize),
     YearUpper(usize),
     Month(usize),
-    Day,
-    Hour,
+    Day(usize),
+    HourLower(usize),
+    HourUpper(usize),
     Minute(usize),
-    Second,
+    Second(usize),
     LiteralChar(char),
     Literal(String),
 }
@@ -46,7 +47,11 @@ impl SimpleDateFormat {
                 } else {
                     ret.push_str(format_month(date_time.month(), *cnt));
                 },
+                SimpleDateFormatPart::Day(cnt) => ret.push_str(&format_str(date_time.day() as i32, *cnt)),
+                SimpleDateFormatPart::HourLower(cnt) => ret.push_str(&format_str(date_time.hour12().1 as i32, *cnt)),
+                SimpleDateFormatPart::HourUpper(cnt) => ret.push_str(&format_str(date_time.hour() as i32, *cnt)),
                 SimpleDateFormatPart::Minute(cnt) => ret.push_str(&format_str(date_time.minute() as i32, *cnt)),
+                SimpleDateFormatPart::Second(cnt) => ret.push_str(&format_str(date_time.second() as i32, *cnt)),
                 _ => (),
             }
         }
@@ -82,7 +87,11 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
             'y' => parts.push(SimpleDateFormatPart::YearLower(get_all_chars(c, &mut chars))),
             'Y' => parts.push(SimpleDateFormatPart::YearUpper(get_all_chars(c, &mut chars))),
             'M' => parts.push(SimpleDateFormatPart::Month(get_all_chars(c, &mut chars))),
+            'd' => parts.push(SimpleDateFormatPart::Day(get_all_chars(c, &mut chars))),
+            'h' => parts.push(SimpleDateFormatPart::HourLower(get_all_chars(c, &mut chars))),
+            'H' => parts.push(SimpleDateFormatPart::HourUpper(get_all_chars(c, &mut chars))),
             'm' => parts.push(SimpleDateFormatPart::Minute(get_all_chars(c, &mut chars))),
+            's' => parts.push(SimpleDateFormatPart::Second(get_all_chars(c, &mut chars))),
             _ => (),
         }
     }
@@ -137,7 +146,7 @@ fn it_works() {
     // println!("test output: {}", fmt("").unwrap().format_local(&Local::now()));
 
     println!("{:?}", fmt("y yy-mm 'mm '''"));
-    println!("{:?}", fmt("y yy-MM mm'(-'m')' MM MMM MMMMM '[mm]'").unwrap().format_local(&Local::now()));
+    println!("{:?}", fmt("yyyy-MM-dd HH:mm:ss  MMM dd, yyyy hh:mm:ss").unwrap().format_local(&Local::now()));
 
     assert_eq!(2 + 2, 4);
 }
