@@ -1,8 +1,6 @@
 #[macro_use] extern crate quick_error;
-use chrono::{ Local,prelude::*, };
-
-use std::str::Chars;
-use std::iter::Peekable;
+use chrono::prelude::*;
+use std::{ str::Chars, iter::Peekable };
 
 quick_error! {
     #[derive(Debug)]
@@ -15,14 +13,19 @@ quick_error! {
 
 #[derive(Debug)]
 enum SimpleDateFormatPart {
-    YearLower(usize),
-    YearUpper(usize),
+    Ear,
+    Year(usize),
     Month(usize),
     Day(usize),
     HourLower(usize),
     HourUpper(usize),
     Minute(usize),
     Second(usize),
+    Millis(usize),
+    AmPm(usize),
+    WeekDay(usize),
+    YearDay(usize),
+    Zone(usize),
     LiteralChar(char),
     Literal(String),
 }
@@ -34,14 +37,16 @@ pub struct SimpleDateFormat {
 
 impl SimpleDateFormat {
 
-    pub fn format_local(&self, date_time: &DateTime<Local>) -> String {
+    pub fn format<Tz>(&self, date_time: &DateTime<Tz>) -> String where Tz: TimeZone {
         let mut ret = String::with_capacity(512);
 
         for part in &self.parts {
+            date_time.timezone();
             match part {
+                SimpleDateFormatPart::Ear => ret.push_str("AD"), // ?
                 SimpleDateFormatPart::LiteralChar(c) => ret.push(*c),
                 SimpleDateFormatPart::Literal(s) => ret.push_str(s),
-                SimpleDateFormatPart::YearLower(cnt) => ret.push_str(&format_str(date_time.year(), *cnt)),
+                SimpleDateFormatPart::Year(cnt) => ret.push_str(&format_year(date_time.year(), *cnt)),
                 SimpleDateFormatPart::Month(cnt) => if *cnt <= 2 {
                     ret.push_str(&format_str(date_time.month() as i32, *cnt))
                 } else {
@@ -52,7 +57,11 @@ impl SimpleDateFormat {
                 SimpleDateFormatPart::HourUpper(cnt) => ret.push_str(&format_str(date_time.hour() as i32, *cnt)),
                 SimpleDateFormatPart::Minute(cnt) => ret.push_str(&format_str(date_time.minute() as i32, *cnt)),
                 SimpleDateFormatPart::Second(cnt) => ret.push_str(&format_str(date_time.second() as i32, *cnt)),
-                _ => (),
+                SimpleDateFormatPart::Millis(cnt) => ret.push_str(&format_str((date_time.nanosecond() / 1_000_000) as i32, *cnt)),
+                SimpleDateFormatPart::AmPm(cnt) => ret.push_str(format_ampm(date_time.hour12().0, *cnt)),
+                SimpleDateFormatPart::WeekDay(cnt) => ret.push_str(format_week_day(date_time.weekday(), *cnt)),
+                SimpleDateFormatPart::YearDay(cnt) => ret.push_str(&format_str(date_time.ordinal() as i32, *cnt)),
+                SimpleDateFormatPart::Zone(cnt) => ret.push_str(&format_zone(date_time, *cnt)),
             }
         }
         ret
@@ -87,19 +96,50 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
                 is_in_quotation_mark = true;
             },
             ',' | '.' | ':' | '-' | ' ' | '/' => parts.push(SimpleDateFormatPart::LiteralChar(c)),
-            'y' => parts.push(SimpleDateFormatPart::YearLower(get_all_chars(c, &mut chars))),
-            'Y' => parts.push(SimpleDateFormatPart::YearUpper(get_all_chars(c, &mut chars))),
+            'G' => parts.push(SimpleDateFormatPart::Ear),
+            'y' => parts.push(SimpleDateFormatPart::Year(get_all_chars(c, &mut chars))),
             'M' => parts.push(SimpleDateFormatPart::Month(get_all_chars(c, &mut chars))),
             'd' => parts.push(SimpleDateFormatPart::Day(get_all_chars(c, &mut chars))),
             'h' => parts.push(SimpleDateFormatPart::HourLower(get_all_chars(c, &mut chars))),
             'H' => parts.push(SimpleDateFormatPart::HourUpper(get_all_chars(c, &mut chars))),
             'm' => parts.push(SimpleDateFormatPart::Minute(get_all_chars(c, &mut chars))),
             's' => parts.push(SimpleDateFormatPart::Second(get_all_chars(c, &mut chars))),
+            'S' => parts.push(SimpleDateFormatPart::Millis(get_all_chars(c, &mut chars))),
+            'a' => parts.push(SimpleDateFormatPart::AmPm(get_all_chars(c, &mut chars))),
+            'E' => parts.push(SimpleDateFormatPart::WeekDay(get_all_chars(c, &mut chars))),
+            'D' => parts.push(SimpleDateFormatPart::YearDay(get_all_chars(c, &mut chars))),
+            'z' => parts.push(SimpleDateFormatPart::Zone(get_all_chars(c, &mut chars))),
             _ => return Err(ParseError::Format(format!("Illegal char: {}", c))),
         }
     }
 
     Ok(SimpleDateFormat{ parts })
+}
+
+fn format_zone<Tz>(date_time: &DateTime<Tz>, _cnt: usize) -> String where Tz: TimeZone {
+    format!("{:?}", date_time.offset())
+}
+
+fn format_ampm(is_pm: bool, _cnt: usize) -> &'static str {
+    if is_pm { "PM" } else { "AM" }
+}
+
+fn format_week_day(n: Weekday, cnt: usize) -> &'static str {
+    let is_short = cnt == 3;
+    match n {
+        Weekday::Mon => if is_short { "Mon" } else { "Monday"    },
+        Weekday::Tue => if is_short { "Tue" } else { "Tuesday"   },
+        Weekday::Wed => if is_short { "Wed" } else { "Wednesday" },
+        Weekday::Thu => if is_short { "Thu" } else { "Thursday"  },
+        Weekday::Fri => if is_short { "Fri" } else { "Friday"    },
+        Weekday::Sat => if is_short { "Sat" } else { "Saturday"  },
+        Weekday::Sun => if is_short { "Sun" } else { "Sunday"    },
+   }
+}
+
+fn format_year(n: i32, cnt: usize) -> String {
+    let y = if cnt == 2 { n % 100 } else { n };
+    format_str(y, cnt)
 }
 
 fn format_month(n: u32, cnt: usize) -> &'static str {
@@ -145,10 +185,21 @@ fn get_all_chars(c: char, chars: &mut Peekable<Chars>) -> usize {
 
 #[test]
 fn it_works() {
-    // println!("test output: {}", fmt("").unwrap().format_local(&Local::now()));
+    let t = Utc.timestamp_millis(0);
+    assert_eq!("1970/01/01 00:00:00.000 Z", &fmt("yyyy/MM/dd HH:mm:ss.SSS z").unwrap().format(&t));
 
-    println!("{:?}", fmt("y yy-mm 'mm '''"));
-    println!("{:?}", fmt("yyyy-MM-dd HH:mm:ss  MMM dd, yyyy hh:mm:ss").unwrap().format_local(&Local::now()));
+    let t = Utc.timestamp_millis(1111111111);
+    assert_eq!("1970/01/13 20:38:31.111 Z", &fmt("yyyy/MM/dd HH:mm:ss.SSS z").unwrap().format(&t));
 
-    assert_eq!(2 + 2, 4);
+    let t = Utc.timestamp_millis(1111111111);
+    assert_eq!("1970/01/13 08:38:31.111 Z PM", &fmt("yyyy/MM/dd hh:mm:ss.SSS z a").unwrap().format(&t));
+
+    let t = Utc.timestamp_millis(1590816448678);
+    assert_eq!("2020/05/30 05:27:28.678 Z AM", &fmt("yyyy/MM/dd hh:mm:ss.SSS z a").unwrap().format(&t));
+
+    let t = Utc.timestamp_millis(1590816448678);
+    assert_eq!("Sat May 30, 2020 05:27:28.678 Z AM", &fmt("EEE MMM dd, yyyy hh:mm:ss.SSS z a").unwrap().format(&t));
+
+    let t = Local.timestamp_millis(1590816448678);
+    assert_eq!("Sat May 30, 2020 01:27:28.678 +08:00 PM", &fmt("EEE MMM dd, yyyy hh:mm:ss.SSS z a").unwrap().format(&t));
 }
