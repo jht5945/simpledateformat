@@ -77,6 +77,9 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
                     chars.next(); // eat '\''
                 } else {
                     is_in_quotation_mark = false;
+                    if literal.is_empty() {
+                        literal.push('\'');
+                    }
                     parts.push(SimpleDateFormatPart::Literal(literal));
                     literal = String::new();
                 }
@@ -92,12 +95,11 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
             'H' => parts.push(SimpleDateFormatPart::HourUpper(get_all_chars(c, &mut chars))),
             'm' => parts.push(SimpleDateFormatPart::Minute(get_all_chars(c, &mut chars))),
             's' => parts.push(SimpleDateFormatPart::Second(get_all_chars(c, &mut chars))),
-            _ => (),
+            _ => return Err(ParseError::Format(format!("Illegal char: {}", c))),
         }
     }
 
     Ok(SimpleDateFormat{ parts })
-    // Err(ParseError::Format(f.into()))
 }
 
 fn format_month(n: u32, cnt: usize) -> &'static str {
@@ -107,7 +109,7 @@ fn format_month(n: u32, cnt: usize) -> &'static str {
          2 => if is_short { "Feb" } else { "February"  },
          3 => if is_short { "Mar" } else { "March"     },
          4 => if is_short { "Apr" } else { "April"     },
-         5 => if is_short { "May" } else { "May"       },
+         5 => "May", //if is_short { "May" } else { "May"       },
          6 => if is_short { "Jun" } else { "June"      },
          7 => if is_short { "Jul" } else { "July"      },
          8 => if is_short { "Aug" } else { "August"    },
