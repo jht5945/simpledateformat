@@ -1,6 +1,10 @@
 #[macro_use] extern crate quick_error;
 use chrono::prelude::*;
-use std::{ str::Chars, iter::Peekable };
+use std::{
+    time::Duration,
+    str::Chars,
+    iter::Peekable,
+};
 
 quick_error! {
     #[derive(Debug)]
@@ -28,6 +32,46 @@ enum SimpleDateFormatPart {
     Zone(usize),
     LiteralChar(char),
     Literal(String),
+}
+
+pub fn format_human(d: Duration) -> String {
+    let mut ret = vec![];
+    let millis = d.as_millis();
+    if millis == 0 {
+        return "0ms".into();
+    }
+    let return_ret = |v: Vec<String>| {
+        let mut v = v;
+        v.reverse();
+        v.join(" ")
+    };
+    let left_millis = millis % 1000;
+    if left_millis > 0 {
+        ret.push(format!("{}ms", left_millis))
+    }
+    let secs = millis / 1000;
+    if secs == 0 { return return_ret(ret); }
+    let left_secs = secs % 60;
+    if left_secs != 0 || !ret.is_empty() {
+        ret.push(format!("{}s", left_secs));
+    }
+    let mins = secs / 60;
+    if mins == 0 { return return_ret(ret); }
+    let left_mins = mins % 60;
+    if left_mins != 0 || !ret.is_empty() {
+        ret.push(format!("{}min", left_mins));
+    }
+    let hours = mins / 60;
+    if hours == 0 { return return_ret(ret); }
+    let left_hours = hours % 24;
+    if left_hours != 0 || !ret.is_empty() {
+        ret.push(format!("{}hour", left_hours));
+    }
+    let days = hours / 24;
+    if days != 0 {
+        ret.push(format!("{}day{}", days, if days == 1 { "" } else { "s" }));
+    }
+    return_ret(ret)
 }
 
 #[derive(Debug)]
@@ -184,7 +228,7 @@ fn get_all_chars(c: char, chars: &mut Peekable<Chars>) -> usize {
 }
 
 #[test]
-fn it_works() {
+fn test_simpledateformat_format() {
     let t = Utc.timestamp_millis(0);
     assert_eq!("1970/01/01 00:00:00.000 Z", &fmt("yyyy/MM/dd HH:mm:ss.SSS z").unwrap().format(&t));
 
@@ -202,4 +246,17 @@ fn it_works() {
 
     let t = Local.timestamp_millis(1590816448678);
     assert_eq!("Sat May 30, 2020 01:27:28.678 +08:00 PM", &fmt("EEE MMM dd, yyyy hh:mm:ss.SSS z a").unwrap().format(&t));
+}
+
+#[test]
+fn test_format_human() {
+    assert_eq!("0ms", format_human(Duration::from_millis(0)));
+    assert_eq!("11ms", format_human(Duration::from_millis(11)));
+    assert_eq!("11s 111ms", format_human(Duration::from_millis(11111)));
+    assert_eq!("1s", format_human(Duration::from_secs(1)));
+    assert_eq!("1min", format_human(Duration::from_secs(60)));
+    assert_eq!("1hour", format_human(Duration::from_secs(60 * 60)));
+    assert_eq!("1day", format_human(Duration::from_secs(24 * 60 * 60)));
+    assert_eq!("2days", format_human(Duration::from_secs(2 * 24 * 60 * 60)));
+    assert_eq!("2days 0hour 0min 1s", format_human(Duration::from_secs(2 * 24 * 60 * 60 + 1)));
 }
