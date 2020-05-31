@@ -30,3 +30,6 @@ Output:
 2days 0hour 0min 1s
 ```
 
+
+More tests:
+> https://git.hatter.ink/hatter/simpledateformat/src/branch/master/tests/lib_test.rs
