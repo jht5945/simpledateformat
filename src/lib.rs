@@ -80,6 +80,10 @@ pub struct SimpleDateFormat {
 
 impl SimpleDateFormat {
 
+    pub fn new(f: &str) -> Result<SimpleDateFormat, ParseError> {
+        fmt(f)
+    }
+
     pub fn format<Tz>(&self, date_time: &DateTime<Tz>) -> String where Tz: TimeZone {
         let mut ret = String::with_capacity(512);
 
