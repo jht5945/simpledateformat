@@ -40,8 +40,7 @@ pub fn format_human(d: Duration) -> String {
     if millis == 0 {
         return "0ms".into();
     }
-    let return_ret = |v: Vec<String>| {
-        let mut v = v;
+    let return_ret = |mut v: Vec<String>| {
         v.reverse();
         v.join(" ")
     };
