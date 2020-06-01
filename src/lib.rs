@@ -7,6 +7,7 @@ use std::{
 };
 
 quick_error! {
+    /// Format parse error
     #[derive(Debug)]
     pub enum ParseError {
         Format(m: String) {
@@ -34,6 +35,10 @@ enum SimpleDateFormatPart {
     Literal(String),
 }
 
+/// Format duration for human read
+/// ```ignore
+/// assert_eq!("2days 0hour 0min 1s", format_human(Duration::from_secs(2 * 24 * 60 * 60 + 1)));
+/// ```
 pub fn format_human(d: Duration) -> String {
     let mut ret = vec![];
     let millis = d.as_millis();
@@ -73,6 +78,7 @@ pub fn format_human(d: Duration) -> String {
     return_ret(ret)
 }
 
+/// Format struct, parse format and format date
 #[derive(Debug)]
 pub struct SimpleDateFormat {
     parts: Vec<SimpleDateFormatPart>,
@@ -80,10 +86,16 @@ pub struct SimpleDateFormat {
 
 impl SimpleDateFormat {
 
+    /// Create format from string
     pub fn new(f: &str) -> Result<SimpleDateFormat, ParseError> {
         fmt(f)
     }
 
+    // Format date
+    /// ```ignore
+    /// let t = Utc.timestamp_millis(1590816448678);
+    /// assert_eq!("2020/05/30 05:27:28.678 Z AM", &fmt("yyyy/MM/dd hh:mm:ss.SSS z a").unwrap().format(&t));
+    /// ```
     pub fn format<Tz>(&self, date_time: &DateTime<Tz>) -> String where Tz: TimeZone {
         let mut ret = String::with_capacity(512);
 
@@ -115,6 +127,7 @@ impl SimpleDateFormat {
     }
 }
 
+/// Create format, equals `SimpleDateFormat::new(f: &str)`
 pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
     let mut parts = vec![];
 
