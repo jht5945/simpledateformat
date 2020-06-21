@@ -91,6 +91,11 @@ impl SimpleDateFormat {
         fmt(f)
     }
 
+    /// Create format from string with out error
+    pub fn new_with_out_err(f: &str) -> SimpleDateFormat {
+        Self::new(f).unwrap_or_else(|_| Self{ parts: vec![] })
+    }
+
     // Format date
     /// ```ignore
     /// let t = Utc.timestamp_millis(1590816448678);
