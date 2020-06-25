@@ -39,3 +39,4 @@ Log
 
 * Jun 23, 2020 - v0.1.1
     * add `simpledateformat::new_with_out_err(&str)`
+    * add `impl TryFrom<&str> for SimpleDateFormat`
