@@ -1,4 +1,4 @@
-use simpledateformat::{ fmt, format_human, };
+use simpledateformat::{ SimpleDateFormat, fmt, format_human, };
 use chrono::prelude::*;
 use std::time::Duration;
 
@@ -34,4 +34,13 @@ fn test_format_human() {
     assert_eq!("1day", format_human(Duration::from_secs(24 * 60 * 60)));
     assert_eq!("2days", format_human(Duration::from_secs(2 * 24 * 60 * 60)));
     assert_eq!("2days 0hour 0min 1s", format_human(Duration::from_secs(2 * 24 * 60 * 60 + 1)));
+}
+
+#[test]
+fn test_try_from() {
+    use std::convert::TryInto;
+    let t = Utc.timestamp_millis(0);
+    let fmt = "yyyy/MM/dd HH:mm:ss.SSS z";
+    let sdf: Result<SimpleDateFormat, _> = fmt.try_into();
+    assert_eq!("1970/01/01 00:00:00.000 Z", sdf.unwrap().format(&t));
 }

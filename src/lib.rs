@@ -1,6 +1,7 @@
 #[macro_use] extern crate quick_error;
 use chrono::prelude::*;
 use std::{
+    convert::TryFrom,
     time::Duration,
     str::Chars,
     iter::Peekable,
@@ -179,6 +180,14 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
     }
 
     Ok(SimpleDateFormat{ parts })
+}
+
+impl TryFrom<&str> for SimpleDateFormat {
+    type Error = ParseError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        SimpleDateFormat::new(s)
+    }
 }
 
 fn format_zone<Tz>(date_time: &DateTime<Tz>, _cnt: usize) -> String where Tz: TimeZone {
