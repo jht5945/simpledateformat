@@ -1,4 +1,6 @@
-#[macro_use] extern crate quick_error;
+#[macro_use]
+extern crate quick_error;
+
 use chrono::prelude::*;
 use std::{
     convert::TryFrom,
@@ -79,6 +81,14 @@ pub fn format_human(d: Duration) -> String {
     return_ret(ret)
 }
 
+pub fn get_local_now() -> DateTime<Local> {
+    Local::now()
+}
+
+pub fn get_utc_now() -> DateTime<Utc> {
+    Utc::now()
+}
+
 /// Format struct, parse format and format date
 #[derive(Debug)]
 pub struct SimpleDateFormat {
@@ -86,7 +96,6 @@ pub struct SimpleDateFormat {
 }
 
 impl SimpleDateFormat {
-
     /// Create format from string
     pub fn new(f: &str) -> Result<SimpleDateFormat, ParseError> {
         fmt(f)
@@ -94,7 +103,15 @@ impl SimpleDateFormat {
 
     /// Create format from string with out error
     pub fn new_with_out_err(f: &str) -> SimpleDateFormat {
-        Self::new(f).unwrap_or_else(|_| Self{ parts: vec![] })
+        Self::new(f).unwrap_or_else(|_| Self { parts: vec![] })
+    }
+
+    pub fn format_local_now(&self) -> String {
+        self.format(&Local::now())
+    }
+
+    pub fn format_utc_now(&self) -> String {
+        self.format(&Utc::now())
     }
 
     // Format date
@@ -179,7 +196,7 @@ pub fn fmt(f: &str) -> Result<SimpleDateFormat, ParseError> {
         }
     }
 
-    Ok(SimpleDateFormat{ parts })
+    Ok(SimpleDateFormat { parts })
 }
 
 impl TryFrom<&str> for SimpleDateFormat {
@@ -201,14 +218,14 @@ fn format_ampm(is_pm: bool, _cnt: usize) -> &'static str {
 fn format_week_day(n: Weekday, cnt: usize) -> &'static str {
     let is_short = cnt == 3;
     match n {
-        Weekday::Mon => if is_short { "Mon" } else { "Monday"    },
-        Weekday::Tue => if is_short { "Tue" } else { "Tuesday"   },
+        Weekday::Mon => if is_short { "Mon" } else { "Monday" },
+        Weekday::Tue => if is_short { "Tue" } else { "Tuesday" },
         Weekday::Wed => if is_short { "Wed" } else { "Wednesday" },
-        Weekday::Thu => if is_short { "Thu" } else { "Thursday"  },
-        Weekday::Fri => if is_short { "Fri" } else { "Friday"    },
-        Weekday::Sat => if is_short { "Sat" } else { "Saturday"  },
-        Weekday::Sun => if is_short { "Sun" } else { "Sunday"    },
-   }
+        Weekday::Thu => if is_short { "Thu" } else { "Thursday" },
+        Weekday::Fri => if is_short { "Fri" } else { "Friday" },
+        Weekday::Sat => if is_short { "Sat" } else { "Saturday" },
+        Weekday::Sun => if is_short { "Sun" } else { "Sunday" },
+    }
 }
 
 fn format_year(n: i32, cnt: usize) -> String {
@@ -219,18 +236,18 @@ fn format_year(n: i32, cnt: usize) -> String {
 fn format_month(n: u32, cnt: usize) -> &'static str {
     let is_short = cnt == 3;
     match n {
-         1 => if is_short { "Jan" } else { "January"   },
-         2 => if is_short { "Feb" } else { "February"  },
-         3 => if is_short { "Mar" } else { "March"     },
-         4 => if is_short { "Apr" } else { "April"     },
-         5 => "May", //if is_short { "May" } else { "May"       },
-         6 => if is_short { "Jun" } else { "June"      },
-         7 => if is_short { "Jul" } else { "July"      },
-         8 => if is_short { "Aug" } else { "August"    },
-         9 => if is_short { "Sep" } else { "September" },
-        10 => if is_short { "Oct" } else { "October"   },
-        11 => if is_short { "Nov" } else { "November"  },
-        12 => if is_short { "Dec" } else { "December"  },
+        1 => if is_short { "Jan" } else { "January" },
+        2 => if is_short { "Feb" } else { "February" },
+        3 => if is_short { "Mar" } else { "March" },
+        4 => if is_short { "Apr" } else { "April" },
+        5 => "May", //if is_short { "May" } else { "May"       },
+        6 => if is_short { "Jun" } else { "June" },
+        7 => if is_short { "Jul" } else { "July" },
+        8 => if is_short { "Aug" } else { "August" },
+        9 => if is_short { "Sep" } else { "September" },
+        10 => if is_short { "Oct" } else { "October" },
+        11 => if is_short { "Nov" } else { "November" },
+        12 => if is_short { "Dec" } else { "December" },
         _ => "ERR!UNKNOWN MONTH",
     }
 }
