@@ -8,6 +8,7 @@ use std::{
     str::Chars,
     iter::Peekable,
 };
+use std::time::SystemTime;
 
 quick_error! {
     /// Format parse error
@@ -112,6 +113,16 @@ impl SimpleDateFormat {
 
     pub fn format_utc_now(&self) -> String {
         self.format(&Utc::now())
+    }
+
+    pub fn format_utc(&self, time: SystemTime) -> String {
+        let date_time: DateTime<Utc> = time.into();
+        self.format(&date_time)
+    }
+
+    pub fn format_local(&self, time: SystemTime) -> String {
+        let date_time: DateTime<Local> = time.into();
+        self.format(&date_time)
     }
 
     // Format date
