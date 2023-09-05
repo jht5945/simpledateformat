@@ -1,14 +1,15 @@
 #[macro_use]
 extern crate quick_error;
 
-use chrono::prelude::*;
 use std::{
     convert::TryFrom,
-    time::Duration,
-    str::Chars,
     iter::Peekable,
+    str::Chars,
+    time::Duration,
 };
 use std::time::SystemTime;
+
+use chrono::prelude::*;
 
 quick_error! {
     /// Format parse error
@@ -82,6 +83,50 @@ pub fn format_human(d: Duration) -> String {
     return_ret(ret)
 }
 
+/// Format duration for human read 2
+/// ```ignore
+/// assert_eq!("2days 0hour 0min 1s", format_human(Duration::from_secs(2 * 24 * 60 * 60 + 1)));
+/// ```
+pub fn format_human2(d: Duration) -> String {
+    let mut ret = vec![];
+    let millis = d.as_millis();
+    let original_millis = millis;
+    if millis == 0 {
+        return "0ms".into();
+    }
+    let return_ret = |mut v: Vec<String>| {
+        v.reverse();
+        v.join(" ")
+    };
+    let left_millis = millis % 1000;
+    if left_millis > 0 && original_millis < 60_000 {
+        ret.push(format!("{}ms", left_millis))
+    }
+    let secs = millis / 1000;
+    if secs == 0 { return return_ret(ret); }
+    let left_secs = secs % 60;
+    if (left_secs != 0 || !ret.is_empty()) && original_millis < 3600_000 {
+        ret.push(format!("{}s", left_secs));
+    }
+    let mins = secs / 60;
+    if mins == 0 { return return_ret(ret); }
+    let left_mins = mins % 60;
+    if (left_mins != 0 || !ret.is_empty()) && original_millis < 24 * 3600_000 {
+        ret.push(format!("{}min", left_mins));
+    }
+    let hours = mins / 60;
+    if hours == 0 { return return_ret(ret); }
+    let left_hours = hours % 24;
+    if (left_hours != 0 || !ret.is_empty()) && original_millis < 30 * 24 * 3600_000 {
+        ret.push(format!("{}hour", left_hours));
+    }
+    let days = hours / 24;
+    if days != 0 {
+        ret.push(format!("{}day{}", days, if days == 1 { "" } else { "s" }));
+    }
+    return_ret(ret)
+}
+
 pub fn get_local_now() -> DateTime<Local> {
     Local::now()
 }
@@ -134,7 +179,7 @@ impl SimpleDateFormat {
         let mut ret = String::with_capacity(512);
 
         for part in &self.parts {
-            date_time.timezone();
+            let _ = date_time.timezone();
             match part {
                 SimpleDateFormatPart::Ear => ret.push_str("AD"), // ?
                 SimpleDateFormatPart::LiteralChar(c) => ret.push(*c),
